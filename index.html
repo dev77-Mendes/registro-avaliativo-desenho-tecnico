@@ -18,7 +18,7 @@
       margin-bottom: 20px;
     }
     .logo-container img {
-      max-width: 200px; /* Ajuste conforme necessário */
+      max-width: 220px;
       height: auto;
       border: none;
     }
@@ -65,13 +65,9 @@
       margin-right: 8px;
     }
     .btn:hover { background: #2980b9; }
-    .btn-export {
-      background: #27ae60;
-    }
+    .btn-export { background: #27ae60; }
     .btn-export:hover { background: #219653; }
-    .btn-reset {
-      background: #e74c3c;
-    }
+    .btn-reset { background: #e74c3c; }
     .btn-reset:hover { background: #c0392b; }
     .historico {
       margin-top: 30px;
@@ -89,27 +85,17 @@
 </head>
 <body>
 
-  <!-- 🔷 LOGO NO TOPO -->
+  <!-- LOGO DO SENAI -->
   <div class="logo-container">
-    <!-- 
-      Substitua o src abaixo pelo caminho da sua logo.
-      Exemplos:
-        - Local:   src="logo-senai.png"
-        - Online:  src="https://seu-site.com/logo.png"
-    -->
-    <img src="logo-senai.png" alt="SENAI">
+    <img src="https://www.senai.br/assets/images/logo-senai.svg" alt="SENAI">
   </div>
 
   <h1>Registro Avaliativo – Desenho Técnico</h1>
   <h2>UC: Desenho Técnico Aplicado a Projetos Elétricos</h2>
 
-  <div class="header">
-    <div class="form-row">
-      <div class="form-group">
-        <label for="professor">Professor(a)</label>
-        <input type="text" id="professor" placeholder="Seu nome">
-      </div>
-    </div>
+  <div class="form-group">
+    <label for="professor">Professor(a)</label>
+    <input type="text" id="professor" placeholder="Seu nome">
   </div>
 
   <div class="form-group">
@@ -143,7 +129,6 @@
   </div>
 
   <script>
-    // Mapeamento: aula → capacidades esperadas
     const mapaCapacidades = {
       1: ["Reconhecer fundamentos do desenho técnico", "Perceber importância das normas", "Demonstrar responsabilidade"],
       2: ["Utilizar instrumentos de desenho", "Aplicar layout conforme NBR 10068", "Atenção aos detalhes"],
@@ -162,47 +147,48 @@
       15: ["Sintetizar conhecimentos", "Entregar projeto completo", "Gestão de tempo e iniciativa"]
     };
 
+    // ✅ TUDO dentro do DOMContentLoaded
     document.addEventListener('DOMContentLoaded', () => {
-      const select = document.getElementById('aula');
+      const selectAula = document.getElementById('aula');
+      
+      // Preenche opções de aula
       for (let i = 1; i <= 15; i++) {
         const opt = document.createElement('option');
         opt.value = i;
         opt.textContent = `Aula ${i}`;
-        select.appendChild(opt);
+        selectAula.appendChild(opt);
       }
+
+      // ✅ Evento de mudança AGORA FUNCIONA
+      selectAula.addEventListener('change', function() {
+        const aula = this.value;
+        const container = document.getElementById('listaCapacidades');
+        if (!aula) {
+          container.innerHTML = '<p>Selecione uma aula para carregar as capacidades.</p>';
+          return;
+        }
+        const caps = mapaCapacidades[aula];
+        let html = `<h4>Capacidades da Aula ${aula}:</h4>`;
+        caps.forEach(cap => {
+          html += `<div class="capacidade-item"><label><input type="checkbox" data-desc="${cap}"> ${cap}</label></div>`;
+        });
+        container.innerHTML = html;
+      });
+
+      // Carrega histórico e professor
       carregarHistorico();
       const savedProf = localStorage.getItem('professor_nome');
       if (savedProf) document.getElementById('professor').value = savedProf;
     });
 
-    const aulaSelect = document.getElementById('aula');
-    const listaCapacidades = document.getElementById('listaCapacidades');
-
-    aulaSelect.addEventListener('change', function() {
-      const aula = this.value;
-      if (!aula) {
-        listaCapacidades.innerHTML = '<p>Selecione uma aula para carregar as capacidades.</p>';
-        return;
-      }
-      const caps = mapaCapacidades[aula];
-      let html = `<h4>Capacidades da Aula ${aula}:</h4>`;
-      caps.forEach(cap => {
-        html += `<div class="capacidade-item"><label><input type="checkbox" data-desc="${cap}"> ${cap}</label></div>`;
-      });
-      listaCapacidades.innerHTML = html;
-    });
-
+    // Funções globais (fora do DOMContentLoaded, mas usam elementos já carregados)
     function salvarRegistro() {
       const prof = document.getElementById('professor').value.trim();
       const aluno = document.getElementById('aluno').value.trim();
-      const aula = aulaSelect.value;
+      const aula = document.getElementById('aula').value;
       const obs = document.getElementById('observacao').value.trim();
 
-      if (!aluno || !aula) {
-        alert("Preencha o nome do aluno e selecione a aula.");
-        return;
-      }
-
+      if (!aluno || !aula) return alert("Preencha o nome do aluno e selecione a aula.");
       if (prof) localStorage.setItem('professor_nome', prof);
 
       const checkboxes = document.querySelectorAll('#listaCapacidades input[type="checkbox"]:checked');
@@ -216,15 +202,9 @@
         observacao: obs
       };
 
-      const chave = `registro_${aluno.replace(/\s+/g, '_')}_${aula}`;
-      localStorage.setItem(chave, JSON.stringify(registro));
-
+      localStorage.setItem(`registro_${aluno.replace(/\s+/g, '_')}_${aula}`, JSON.stringify(registro));
       alert(`Registro da Aula ${aula} salvo para ${aluno}!`);
       carregarHistorico();
-      limparForm();
-    }
-
-    function limparForm() {
       document.getElementById('observacao').value = '';
       document.querySelectorAll('#listaCapacidades input[type="checkbox"]').forEach(cb => cb.checked = false);
     }
@@ -232,7 +212,6 @@
     function carregarHistorico() {
       const container = document.getElementById('listaRegistros');
       container.innerHTML = '';
-
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('registro_')) {
@@ -251,49 +230,35 @@
 
     function exportarRegistros() {
       let texto = "REGISTROS AVALIATIVOS – Desenho Técnico\n========================================\n\n";
-      let temRegistros = false;
+      let tem = false;
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && key.startsWith('registro_')) {
-          temRegistros = true;
-          const reg = JSON.parse(localStorage.getItem(key));
-          texto += `Aluno: ${reg.aluno}\n`;
-          texto += `Aula: ${reg.aula}\n`;
-          texto += `Data: ${reg.data}\n`;
-          texto += `Capacidades: ${reg.capacidades.join('; ') || 'Nenhuma'}\n`;
-          if (reg.observacao) texto += `Observação: ${reg.observacao}\n`;
+          tem = true;
+          const r = JSON.parse(localStorage.getItem(key));
+          texto += `Aluno: ${r.aluno}\nAula: ${r.aula}\nData: ${r.data}\nCapacidades: ${r.capacidades.join('; ') || 'Nenhuma'}\n`;
+          if (r.observacao) texto += `Observação: ${r.observacao}\n`;
           texto += "\n---\n\n";
         }
       }
-
-      if (!temRegistros) {
-        alert("Nenhum registro para exportar.");
-        return;
-      }
-
+      if (!tem) return alert("Nenhum registro para exportar.");
       navigator.clipboard.writeText(texto).then(() => {
-        alert("Registros copiados! Cole em um documento ou use Ctrl+P para salvar como PDF.");
+        alert("✅ Registros copiados!\nCole em um documento ou use Ctrl+P para salvar como PDF.");
         window.print();
       }).catch(() => {
-        alert("Não foi possível copiar. Mostre esta janela:");
-        console.log(texto);
+        alert("⚠️ Não foi possível copiar. Mostre esta janela ao coordenador.");
       });
     }
 
     function resetarSistema() {
-      if (confirm("⚠️ ATENÇÃO:\nIsso apagará todos os registros das aulas, mas manterá seu nome.\nDeseja continuar?")) {
+      if (confirm("⚠️ Isso apagará todos os registros das aulas (mas manterá seu nome).\nDeseja continuar?")) {
         exportarRegistros(); // backup automático
-
         for (let i = localStorage.length - 1; i >= 0; i--) {
-          const key = localStorage.key(i);
-          if (key && key.startsWith('registro_')) {
-            localStorage.removeItem(key);
-          }
+          const k = localStorage.key(i);
+          if (k && k.startsWith('registro_')) localStorage.removeItem(k);
         }
-
-        alert("✅ Sistema resetado! Todos os registros foram removidos.");
+        alert("✅ Sistema resetado!");
         carregarHistorico();
-        limparForm();
         document.getElementById('aula').value = '';
         document.getElementById('listaCapacidades').innerHTML = '<p>Selecione uma aula para carregar as capacidades.</p>';
       }
